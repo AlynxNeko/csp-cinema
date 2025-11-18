@@ -1,23 +1,38 @@
-import { useState } from 'react';
-import { useLocation } from 'wouter';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Film } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { useAuth } from '@/lib/auth-context';
-import { useToast } from '@/hooks/use-toast';
+import { useState } from "react";
+import { useLocation } from "wouter";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Film } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { supabase } from "@/lib/supabase";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { useAuth } from "@/lib/auth-context";
+import { useToast } from "@/hooks/use-toast";
 
+// --- Validation Schemas ---
 const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
 const signUpSchema = loginSchema.extend({
-  name: z.string().min(2, 'Name must be at least 2 characters'),
+  name: z.string().min(2, "Name must be at least 2 characters"),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -29,27 +44,52 @@ export default function Login() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
+  // --- Forms ---
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: '', password: '' },
+    defaultValues: { email: "", password: "" },
   });
 
   const signUpForm = useForm<SignUpFormData>({
     resolver: zodResolver(signUpSchema),
-    defaultValues: { email: '', password: '', name: '' },
+    defaultValues: { name: "", email: "", password: "" },
   });
 
+  // --- Handlers ---
   const handleLoginSubmit = async (data: LoginFormData) => {
     try {
+      // sign in
       const { error } = await signIn(data.email, data.password);
       if (error) throw error;
-      toast({ title: 'Welcome back!', description: 'Successfully signed in.' });
-      setLocation('/films');
+
+      // get signed-in user
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+      if (userError || !user) throw userError || new Error("No user found");
+
+      // get user profile
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .single();
+      if (profileError) throw profileError;
+
+      toast({ title: "Welcome back!", description: "Successfully signed in." });
+
+      // redirect by role
+      if (profile.role === "admin") {
+        setLocation("/admin/dashboard");
+      } else {
+        setLocation("/films");
+      }
     } catch (error: any) {
       toast({
-        title: 'Error',
-        description: error.message || 'An error occurred',
-        variant: 'destructive',
+        title: "Error",
+        description: error.message || "An error occurred",
+        variant: "destructive",
       });
     }
   };
@@ -58,14 +98,17 @@ export default function Login() {
     try {
       const { error } = await signUp(data.email, data.password, data.name);
       if (error) throw error;
-      toast({ title: 'Account created!', description: 'Successfully registered. Please sign in.' });
+      toast({
+        title: "Account created!",
+        description: "Successfully registered. Please sign in.",
+      });
       setIsLogin(true);
       signUpForm.reset();
     } catch (error: any) {
       toast({
-        title: 'Error',
-        description: error.message || 'An error occurred',
-        variant: 'destructive',
+        title: "Error",
+        description: error.message || "An error occurred",
+        variant: "destructive",
       });
     }
   };
@@ -73,27 +116,38 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
+        {/* --- Header --- */}
         <div className="flex flex-col items-center mb-8">
           <div className="flex items-center gap-2 mb-2">
             <Film className="h-8 w-8 text-primary" />
             <span className="text-3xl font-bold">CinemaBook</span>
           </div>
-          <p className="text-muted-foreground text-sm">Book your favorite movies</p>
+          <p className="text-muted-foreground text-sm">
+            Book your favorite movies
+          </p>
         </div>
 
+        {/* --- Card --- */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-2xl">{isLogin ? 'Welcome Back' : 'Create Account'}</CardTitle>
+            <CardTitle className="text-2xl">
+              {isLogin ? "Welcome Back" : "Create Account"}
+            </CardTitle>
             <CardDescription>
               {isLogin
-                ? 'Sign in to your account to continue'
-                : 'Register to start booking movie tickets'}
+                ? "Sign in to your account to continue"
+                : "Register to start booking movie tickets"}
             </CardDescription>
           </CardHeader>
+
           <CardContent>
+            {/* --- Login Form --- */}
             {isLogin ? (
-              <Form {...loginForm}>
-                <form onSubmit={loginForm.handleSubmit(handleLoginSubmit)} className="space-y-4">
+              <Form key="login-form" {...loginForm}>
+                <form
+                  onSubmit={loginForm.handleSubmit(handleLoginSubmit)}
+                  className="space-y-4"
+                >
                   <FormField
                     control={loginForm.control}
                     name="email"
@@ -104,7 +158,7 @@ export default function Login() {
                           <Input
                             type="email"
                             placeholder="you@example.com"
-                            data-testid="input-email"
+                            data-testid="login-email"
                             {...field}
                           />
                         </FormControl>
@@ -123,7 +177,7 @@ export default function Login() {
                           <Input
                             type="password"
                             placeholder="••••••••"
-                            data-testid="input-password"
+                            data-testid="login-password"
                             {...field}
                           />
                         </FormControl>
@@ -136,15 +190,21 @@ export default function Login() {
                     type="submit"
                     className="w-full"
                     disabled={loginForm.formState.isSubmitting}
-                    data-testid="button-submit"
+                    data-testid="login-submit"
                   >
-                    {loginForm.formState.isSubmitting ? 'Please wait...' : 'Sign In'}
+                    {loginForm.formState.isSubmitting
+                      ? "Please wait..."
+                      : "Sign In"}
                   </Button>
                 </form>
               </Form>
             ) : (
-              <Form {...signUpForm}>
-                <form onSubmit={signUpForm.handleSubmit(handleSignUpSubmit)} className="space-y-4">
+              /* --- Sign Up Form --- */
+              <Form key="signup-form" {...signUpForm}>
+                <form
+                  onSubmit={signUpForm.handleSubmit(handleSignUpSubmit)}
+                  className="space-y-4"
+                >
                   <FormField
                     control={signUpForm.control}
                     name="name"
@@ -155,7 +215,7 @@ export default function Login() {
                           <Input
                             type="text"
                             placeholder="John Doe"
-                            data-testid="input-name"
+                            data-testid="signup-name"
                             {...field}
                           />
                         </FormControl>
@@ -174,7 +234,7 @@ export default function Login() {
                           <Input
                             type="email"
                             placeholder="you@example.com"
-                            data-testid="input-email"
+                            data-testid="signup-email"
                             {...field}
                           />
                         </FormControl>
@@ -193,7 +253,7 @@ export default function Login() {
                           <Input
                             type="password"
                             placeholder="••••••••"
-                            data-testid="input-password"
+                            data-testid="signup-password"
                             {...field}
                           />
                         </FormControl>
@@ -206,22 +266,27 @@ export default function Login() {
                     type="submit"
                     className="w-full"
                     disabled={signUpForm.formState.isSubmitting}
-                    data-testid="button-submit"
+                    data-testid="signup-submit"
                   >
-                    {signUpForm.formState.isSubmitting ? 'Please wait...' : 'Create Account'}
+                    {signUpForm.formState.isSubmitting
+                      ? "Please wait..."
+                      : "Create Account"}
                   </Button>
                 </form>
               </Form>
             )}
 
+            {/* --- Toggle Button --- */}
             <div className="mt-4 text-center text-sm">
               <button
                 type="button"
                 onClick={() => setIsLogin(!isLogin)}
                 className="text-primary hover:underline"
-                data-testid="button-toggle-mode"
+                data-testid="toggle-mode"
               >
-                {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
+                {isLogin
+                  ? "Don't have an account? Sign up"
+                  : "Already have an account? Sign in"}
               </button>
             </div>
           </CardContent>
