@@ -119,7 +119,7 @@ export default function Login() {
         {/* --- Header --- */}
         <div className="flex flex-col items-center mb-8">
           <div className="flex items-center gap-2 mb-2">
-            <Film className="h-8 w-8 text-primary" />
+            <img src="/CB_logo.png" alt="CinemaBook Logo" className="h-12 w-12"/>
             <span className="text-3xl font-bold">CinemaBook</span>
           </div>
           <p className="text-muted-foreground text-sm">

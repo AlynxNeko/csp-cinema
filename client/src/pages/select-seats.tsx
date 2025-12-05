@@ -96,21 +96,21 @@ export default function SelectSeats() {
                     <span className="text-sm font-medium uppercase tracking-wide">SCREEN</span>
                   </div>
 
-                  <div className="flex justify-center gap-6 mb-6 text-sm">
+                  <div className="flex justify-center gap-4 text-xs sm:text-sm flex-wrap">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 border-2 border-foreground rounded" />
+                      <div className="w-6 h-6 sm:w-8 sm:h-8 border-2 border-foreground rounded" />
                       <span>Available</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 border-4 border-primary rounded" />
+                      <div className="w-6 h-6 sm:w-8 sm:h-8 border-4 border-primary rounded" />
                       <span>Selected</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 bg-muted-foreground/20 border-2 border-muted-foreground/40 rounded" />
+                      <div className="w-6 h-6 sm:w-8 sm:h-8 bg-muted-foreground/20 border-2 border-muted-foreground/40 rounded" />
                       <span>Pending</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 bg-muted border-2 border-border rounded" />
+                      <div className="w-6 h-6 sm:w-8 sm:h-8 bg-muted border-2 border-border rounded" />
                       <span>Booked</span>
                     </div>
                   </div>
@@ -121,13 +121,13 @@ export default function SelectSeats() {
                     <div className="animate-pulse text-muted-foreground">Loading seats...</div>
                   </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-1 sm:space-y-3 overflow-x-auto pb-4">
                     {[...Array(rows)].map((_, rowIndex) => {
                       const rowLetter = String.fromCharCode(65 + rowIndex);
                       return (
-                        <div key={rowIndex} className="flex justify-center items-center gap-2">
-                          <span className="text-xs font-mono text-muted-foreground w-4">{rowLetter}</span>
-                          <div className="flex gap-2">
+                        <div key={rowIndex} className="flex justify-center items-center gap-1 sm:gap-2">
+                          <span className="text-xs font-mono text-muted-foreground w-3 sm:w-4 flex-shrink-0">{rowLetter}</span>
+                          <div className="flex gap-1 sm:gap-2">
                             {[...Array(seatsPerRow)].map((_, seatIndex) => {
                               const seatNumber = `${rowLetter}${seatIndex + 1}`;
                               const seatObj = seatStatuses?.find(
